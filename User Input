@@ -1,0 +1,45 @@
+def valid_entry(X, lower_range, upper_range):
+    check = False
+    while (check == False):
+        try:
+            X = float(X)  # Error happens if value is not any number (eg. 32.0=True 3.9=True ?=Error)
+            if (X.is_integer()):  # checks if value is a whole number or not
+                pass  # if it is, this ignores it
+            else:
+                X = input("""	Input is not a valid integer, please enter a valid integer.""")
+                continue
+        except ValueError:  # This catches error from N = float(N)
+            print("""	Input is not a number, please input a valid number.""")
+            X = input()
+            continue
+
+        if (int(X) < lower_range or int(X) > upper_range):
+            print("""	ERROR number is not in a valid range.
+        Please re-enter number.""")
+            X = input()
+        else:
+            check = True
+    return X
+
+def user_interaction():
+    print("""You will enter three integers to configure the simulation:
+the grid size dimension (N), the seconds/blob (T)
+""")
+    print("-------------------------------------------------------------------------------------------------")
+
+    N = input("Enter the grid size dimension for the simulation. It must be an integer between 2 and 100, inclusive: ")
+    N = valid_entry(N, 2, 100)
+
+    T = input("""Enter the seconds/blob the simulation will run if the two strangers do not meet sooner.
+It must be an integer between 4 and 1,000,000, inclusive: """)
+    T = valid_entry(T, 4, 1000000)
+
+    N = int(N)
+    T = int(T)
+    return N, T
+
+def main():
+    MaxT, N = user_interaction()
+    print(N, MaxT)
+    
+main()
