@@ -5,19 +5,22 @@ Jory Ehman
 ...
 
 CS 4500 - SG3: Paint Blobs
-Date of Submission: 05/06/2026
+Date of Submission: 05/08/2026
 Developed in PyCharm, and tested on Thonny.
 
 Purpose:
 Data Structures:
 Packages:
 Outside Resources:
+    https://www.geeksforgeeks.org/python/matplotlib-pyplot-ion-in-python/
 Revision Information:
 """
 
 import os
 import random
 import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.colors import ListedColormap
 from datetime import datetime
 
 INTRO_N    = 10   # grid dimension for the intro simulation
@@ -28,7 +31,7 @@ def displayStartupInfo():
     # Prints SG3 project explanation to the screen.
     print("""
         SG3: Paint Blobs
-        Project Authors: Caleb Hackmann, Jory Ehman,
+        Project Authors: Caleb Hackmann, Jory Ehman, Tyler Mcfarland, Hunter Sindelar,  Jacob Schaefe
  
 Summary:
     This program simulates random paint blobs dropping onto a
@@ -40,11 +43,104 @@ Summary:
     again after MaxT total drops.
 """)
 
+class Canvas:
+    def __init__(self, n, maxt):
+        self.n = n
+        self.maxt = maxt
+        self.grid = [[[] for _ in range(n)] for _ in range(n)]
+        self.history = []
+        self.fill_t = None
 
-def make_canvas(n):
-    # Returns an N x N 2D list of empty lists (all squares start blank).
-    return [[[] for _ in range(n)] for _ in range(n)]
+    def generate(self):
+        colors = [1, 2, 3]
+        for t in range(1, self.maxt + 1):
+            r, c = random.randint(0, self.n - 1), random.randint(0, self.n - 1)
+            color = random.choice(colors)
 
+            self.grid[r][c].append(color)
+            self.history.append((r, c, color))
+
+            # Check if canvas has been filled
+            if self.fill_t is None:
+                if all(len(sq) > 0 for row in self.grid for sq in row):
+                    self.fill_t = t
+
+    def display(self):
+        # 2D array to hold the colors
+        final_view = np.zeros((self.n, self.n))
+
+        # Grab the last color from each square
+        for r in range(self.n):
+            for c in range(self.n):
+                if self.grid[r][c]:
+                    final_view[r][c] = self.grid[r][c][-1]
+
+        # plot
+        fig, ax = plt.subplots()
+        cmap = ListedColormap(['white', 'red', 'green', 'blue'])
+        ax.imshow(final_view, cmap=cmap, vmin=0, vmax=3, extent=[0, self.n, 0, self.n])
+        ax.set_title(f"Final Canvas State\nTotal Blobs: {self.maxt}")
+        ax.set_xticks(range(self.n + 1))
+        ax.set_yticks(range(self.n + 1))
+        ax.grid(True)
+
+        plt.show()
+
+    def animate(self):
+        display_grid = np.zeros((self.n, self.n))
+        plt.ion()
+        fig, ax = plt.subplots()
+
+        cmap = ListedColormap(['white', 'red', 'green', 'blue'])
+        im = ax.imshow(display_grid, cmap=cmap, vmin=0, vmax=3, extent=[0, self.n, 0, self.n])
+
+        # This block adjusts the refresh rate of the display window based on the length of the simulation.
+        # It will dramatically reduce the simulation time for large maxT values and makes it stable
+        update_freq = 1 if self.maxt <= 500 else self.maxt // 100
+        for t, (r, c, color) in enumerate(self.history, 1):
+            display_grid[r][c] = color
+
+            if t % update_freq == 0 or t == self.fill_t or t == self.maxt:
+                im.set_data(display_grid)
+                ax.set_title(f"Blobs: {t}/{self.maxt}")
+                plt.pause(0.02)
+
+            if t == self.fill_t:
+                print(f"Canvas filled at {t} seconds.")
+                plt.pause(2)
+
+        plt.ioff()
+        plt.show()
+
+    def get_stats(self):
+        """
+        Calculates min, max, and avg for blobs across squares.
+        (N, (Min, Max, Avg))
+        """
+        # List of blob count for every square
+        counts = [len(self.grid[r][c]) for r in range(self.n) for c in range(self.n)]
+
+        low = min(counts)
+        high = max(counts)
+        avg = sum(counts) / len(counts)
+
+        return (low, high, avg)  # Returns as a tuple
+
+# ====================================================================================================================
+
+def user_prompt():
+    # Prompts user for N and MaxT, validates both, and returns them as ints.
+    print("You will enter two integers to configure the simulation:")
+    print("the grid size dimension (N) and the number of paint blobs (MaxT).")
+    print("-" * 65)
+
+    N = input("Enter the grid size dimension for the simulation. It must be an integer between 2 and 100, inclusive: ")
+    N = valid_entry(N, 2, 100)
+
+    T = input("Enter MaxT (number of blobs). It must be an integer between 4 and 1,000,000, inclusive: ")
+    T = valid_entry(T, 4, 1000000)
+
+    return int(N), int(T)
 
 def valid_entry(X, lower_range, upper_range):
     # Validates that X is a whole number integer within [lower_range, upper_range].
@@ -69,35 +165,68 @@ def valid_entry(X, lower_range, upper_range):
     return X
 
 
-def user_interaction():
-    # Prompts user for N and MaxT, validates both, and returns them as ints.
-    print("You will enter two integers to configure the simulation:")
-    print("the grid size dimension (N) and the number of paint blobs (MaxT).")
-    print("-" * 65)
+def increment_N(start_n, maxt, step):
+    results = [] # Data for graphing later
+    current_n = start_n
 
-    N = input("Enter the grid size dimension for the simulation. It must be an integer between 2 and 100, inclusive: ")
-    N = valid_entry(N, 2, 100)
+    print(f"\n--- Running 10 Simulations: Incrementing N by {step} ---")
+    for i in range(1, 11):
+        sim = Canvas(current_n, maxt)
+        sim.generate()
 
-    T = input("Enter MaxT (number of blobs). It must be an integer between 4 and 1,000,000, inclusive: ")
-    T = valid_entry(T, 4, 1000000)
+        # Stores the sim's N value and corresponding low, high, and avg
+        results.append((current_n, sim.get_stats()))
 
-    return int(N), int(T)
+        print(f"    Simulation {i}/10: N = {current_n}")
+        current_n += step
 
+    return results
+
+
+def increment_maxt(n, start_maxt, step):
+    results = [] # Data for graphing later
+    current_maxt = start_maxt
+
+    print(f"\n--- Running 10 Simulations: Incrementing MaxT by {step} ---")
+    for i in range(1, 11):
+        sim = Canvas(n, current_maxt)
+        sim.generate()
+
+        # Stores the sim's maxT value and corresponding low, high, and avg
+        results.append((current_maxt, sim.get_stats()))
+
+        print(f"    Simulation {i}/10: MaxT = {current_maxt}")
+        current_maxt += step
+
+    return results
+
+# =====================================================================================================================
+# =====================================================================================================================
+# =====================================================================================================================
 
 def main():
     displayStartupInfo()
 
     # Initialize 10x10 canvas and set MaxT=300 for the intro simulation
-    canvas = make_canvas(INTRO_N)
-    maxt   = INTRO_MAXT
+    intro_canvas = Canvas(INTRO_N, INTRO_MAXT)
+    intro_canvas.generate()
+    intro_canvas.animate()
 
-    # Unique randomness is guaranteed by Python's random module seeding from system time
-    # run_intro_simulation(canvas, maxt) -- teammate's Step 2 plugs in here
+    # New canvas from user prompted values
+    N, maxT = user_prompt()
 
-    N, MaxT = user_interaction()
+    canvas = Canvas(N, maxT)
+    canvas.generate()
+    canvas.animate()
 
-    # Second simulation runs here -- teammate's steps plug in below
+    # Prompt user for incrementing values
 
+    # *incrementing test
+    increment_N(N, maxT, 10)
+
+
+
+    input("Program has finished, Press ENTER to exit.")
 
 if __name__ == "__main__":
     main()
