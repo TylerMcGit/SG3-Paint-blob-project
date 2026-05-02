@@ -13,6 +13,7 @@ Data Structures:
 Packages:
 Outside Resources:
     https://www.geeksforgeeks.org/python/matplotlib-pyplot-ion-in-python/
+    https://www.geeksforgeeks.org/python/matplotlib-tutorial/
 Revision Information:
 """
 
@@ -200,9 +201,122 @@ def increment_maxt(n, start_maxt, step):
 
     return results
 
-# =====================================================================================================================
-# =====================================================================================================================
-# =====================================================================================================================
+def choose_mode():
+    # Prompts the user to choose between holding N or MaxT constant.
+    # Returns 1 (hold MaxT, vary N) or 2 (hold N, vary MaxT).
+    print("\n" + "=" * 65)
+    print("MULTI-SIMULATION COMPARISON")
+    print("=" * 65)
+    print("Choose one of the following options:")
+    print("  1. Hold MaxT constant and change N")
+    print("  2. Hold N constant and change MaxT")
+
+    while True:
+        choice = input("Enter 1 or 2: ").strip()
+        if choice in ("1", "2"):
+            return int(choice)
+        print("   ERROR: Please enter either 1 or 2.")
+
+
+def get_increment(label):
+    # Prompts user for an increment value that must be 1, 10, 100, or 1000.
+    # label: string describing what is being incremented (e.g. 'Nincrement')
+    # Returns the validated increment as an int.
+    valid = {1, 10, 100, 1000}
+    while True:
+        raw = input(f"Enter {label} (must be 1, 10, 100, or 1000): ").strip()
+        try:
+            val = int(float(raw))
+            if val in valid:
+                return val
+            print(f"   ERROR: {label} must be exactly 1, 10, 100, or 1000.")
+        except ValueError:
+            print("   ERROR: Please enter a valid integer.")
+
+
+def graph_N_results(results, maxt):
+    # Displays a graph of blob distribution vs grid size N.
+    # results: list of (n, (low, high, avg)) tuples from increment_N()
+    # maxt: the constant MaxT value held across all simulations
+    ns    = [r[0] for r in results]
+    lows  = [r[1][0] for r in results]
+    highs = [r[1][1] for r in results]
+    avgs  = [r[1][2] for r in results]
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(ns, lows,  'v--', color='blue',  label='Lowest Blobs',  markersize=8)
+    plt.plot(ns, avgs,  's-',  color='green', label='Average Blobs', markersize=8)
+    plt.plot(ns, highs, '^--', color='red',   label='Highest Blobs', markersize=8)
+
+    plt.xlabel("Grid Size (N)", fontsize=12)
+    plt.ylabel("Number of Blobs on a Square", fontsize=12)
+    plt.title(f"Blob Distribution vs Grid Size\n(MaxT = {maxt}, 10 simulations)", fontsize=13)
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def graph_T_results(results, n):
+    # Displays a graph of blob distribution vs total paint blobs (MaxT).
+    # results: list of (maxt, (low, high, avg)) tuples from increment_maxt()
+    # n: the constant grid size held across all simulations
+    ts    = [r[0] for r in results]
+    lows  = [r[1][0] for r in results]
+    highs = [r[1][1] for r in results]
+    avgs  = [r[1][2] for r in results]
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(ts, lows,  'v--', color='blue',  label='Lowest Blobs',  markersize=8)
+    plt.plot(ts, avgs,  's-',  color='green', label='Average Blobs', markersize=8)
+    plt.plot(ts, highs, '^--', color='red',   label='Highest Blobs', markersize=8)
+
+    plt.xlabel("Total Paint Blobs (MaxT)", fontsize=12)
+    plt.ylabel("Number of Blobs on a Square", fontsize=12)
+    plt.title(f"Blob Distribution vs Total Blobs Dropped\n(Grid Size = {n}x{n}, 10 simulations)", fontsize=13)
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+
+def run_multi_simulation(prev_n, prev_maxt):
+    # Handles the full Step 4 flow: prompts user for mode, gathers inputs,
+    # runs 10 background simulations, displays a graph, then waits for ENTER.
+    # prev_n:    the N value from the second simulation
+    # prev_maxt: the MaxT value from the second simulation
+    mode = choose_mode()
+
+    if mode == 1:
+        # Hold MaxT constant, vary N
+        print("\n--- Option 1: Hold MaxT Constant, Change N ---")
+        raw_n = input("Enter starting N (integer, 2 to 100): ")
+        start_n = int(valid_entry(raw_n, 2, 100))
+
+        n_increment = get_increment("Nincrement")
+
+        raw_t = input("Enter MaxT to hold constant (integer, 4 to 1,000,000): ")
+        maxt = int(valid_entry(raw_t, 4, 1000000))
+
+        results = increment_N(start_n, maxt, n_increment)
+        graph_N_results(results, maxt)
+
+    else:
+        # Hold N constant, vary MaxT
+        print("\n--- Option 2: Hold N Constant, Change MaxT ---")
+        raw_t = input("Enter starting MaxT (integer, 4 to 1,000,000): ")
+        start_maxt = int(valid_entry(raw_t, 4, 1000000))
+
+        t_increment = get_increment("Tincrement")
+
+        raw_n = input("Enter N to hold constant (integer, 2 to 100): ")
+        n = int(valid_entry(raw_n, 2, 100))
+
+        results = increment_maxt(n, start_maxt, t_increment)
+        graph_T_results(results, n)
+
+    input("\nAll simulations complete. Press ENTER to finish the program.")
+
 
 def main():
     displayStartupInfo()
@@ -219,14 +333,9 @@ def main():
     canvas.generate()
     canvas.animate()
 
-    # Prompt user for incrementing values
+    #Multi-simulation comparison (replaces the hardcoded increment_N test)
+    run_multi_simulation(N, maxT)
 
-    # *incrementing test
-    increment_N(N, maxT, 10)
-
-
-
-    input("Program has finished, Press ENTER to exit.")
 
 if __name__ == "__main__":
     main()
