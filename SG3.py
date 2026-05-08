@@ -1,35 +1,71 @@
 """
+Language: Python 3
+Developed in PyCharm, and tested on Thonny.
+
 Authors:
-Caleb Hackmann
-Jory Ehman
+    Tyler Mcfarland
+    Jacob Schaefer
+    Caleb Hackmann
+    Jory Ehman
+    Hunter Sindelar
 ...
 
 CS 4500 - SG3: Paint Blobs
 Date of Submission: 05/08/2026
-Developed in PyCharm, and tested on Thonny.
 
 Purpose:
+    This program simulates random paint blobs dropping onto a
+    square canvas. Each drop lands on a random square and gets
+    a random color (red, green, blue). Only the latest blob on
+    each square is visible.
+ 
+    Stats are printed when all squares are first painted, and
+    again after MaxT total drops.
+
 Data Structures:
+    Canvas.grid    - 2D list of lists; each cell stores a list of color values (blob history for that square).
+    Canvas.history - List of (row, col, color) tuples recording every blob drop in order.
+    NumPy 2D arrays are used for rendering the grid with matplotlib.
+
 Packages:
+    random     - Generates random grid positions and blob colors.
+    matplotlib - Renders the canvas grid, animation, and comparison graphs.
+    numpy      - Creates 2D arrays for matplotlib's imshow display.
+
+External Files: None
+
 Outside Resources:
     https://www.geeksforgeeks.org/python/matplotlib-pyplot-ion-in-python/
+        - Used for interactive plotting with plt.ion() and plt.ioff() in the animate method.
     https://www.geeksforgeeks.org/python/matplotlib-tutorial/
+        - General matplotlib usage for plotting and displaying graphs.
+    https://docs.python.org/3/library/random.html
+        - Reference for random.randint() and random.choice() usage.
+    https://docs.python.org/3/tutorial/datastructures.html
+        - Reference for Python list operations and comprehensions.
+
 Revision Information:
+    Mon Apr 27 - Start of Project
+    Mon Apr 29 - Ver 0.1
+    Thu Apr 30 - Ver 0.2
+    Fri May 1 - Ver 0.3
+    Sat May 2 - Ver 0.4
+    Thu May 7 - Ver 1.0
 """
 
-import os
 import random
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import ListedColormap
-from datetime import datetime
 
 INTRO_N    = 10   # grid dimension for the intro simulation
 INTRO_MAXT = 300  # number of blobs for the intro simulation
 
 
 def displayStartupInfo():
-    # Prints SG3 project explanation to the screen.
+    # Prints the project summary and author information to the console.
+    # Parameters: None
+    # Returns: None
     print("""
         SG3: Paint Blobs
         Project Authors: Caleb Hackmann, Jory Ehman, Tyler Mcfarland, Hunter Sindelar,  Jacob Schaefe
@@ -46,6 +82,11 @@ Summary:
 
 class Canvas:
     def __init__(self, n, maxt):
+        # Initializes a Canvas with an n x n grid and a maximum of maxt blob drops.
+        # Parameters:
+        #   n    - grid dimension (n x n)
+        #   maxt - total number of blobs to drop
+        # Returns: None
         self.n = n
         self.maxt = maxt
         self.grid = [[[] for _ in range(n)] for _ in range(n)]
@@ -53,6 +94,10 @@ class Canvas:
         self.fill_t = None
 
     def generate(self):
+        # Drops maxt random blobs onto the grid. Each gets a random position
+        # and color (1=red, 2=green, 3=blue). Records when all squares are first covered.
+        # Parameters: None
+        # Returns: None
         colors = [1, 2, 3]
         for t in range(1, self.maxt + 1):
             r, c = random.randint(0, self.n - 1), random.randint(0, self.n - 1)
@@ -67,7 +112,9 @@ class Canvas:
                     self.fill_t = t
 
     def display(self):
-        # 2D array to hold the colors
+        # Displays the final canvas state as a colored grid using matplotlib.
+        # Parameters: None
+        # Returns: None
         final_view = np.zeros((self.n, self.n))
 
         # Grab the last color from each square
@@ -88,8 +135,12 @@ class Canvas:
         plt.show()
 
     def animate(self):
+        # Animates the blob-dropping process using matplotlib interactive mode.
+        # Pauses when the canvas is first fully covered.
+        # Parameters: None
+        # Returns: None
         display_grid = np.zeros((self.n, self.n))
-        plt.ion()
+        plt.ion()  # Interactive mode (ref: geeksforgeeks.org/python/matplotlib-pyplot-ion-in-python/)
         fig, ax = plt.subplots()
 
         cmap = ListedColormap(['white', 'red', 'green', 'blue'])
@@ -114,10 +165,9 @@ class Canvas:
         plt.show()
 
     def get_stats(self):
-        """
-        Calculates min, max, and avg for blobs across squares.
-        (N, (Min, Max, Avg))
-        """
+        # Calculates the min, max, and average blob count across all grid squares.
+        # Parameters: None
+        # Returns: tuple (min_count, max_count, avg_count)
         # List of blob count for every square
         counts = [len(self.grid[r][c]) for r in range(self.n) for c in range(self.n)]
 
@@ -130,7 +180,9 @@ class Canvas:
 # ====================================================================================================================
 
 def user_prompt():
-    # Prompts user for N and MaxT, validates both, and returns them as ints.
+    # Prompts user for N and MaxT, validates both.
+    # Parameters: None
+    # Returns: tuple (N, MaxT) as integers
     print("You will enter two integers to configure the simulation:")
     print("the grid size dimension (N) and the number of paint blobs (MaxT).")
     print("-" * 65)
@@ -144,8 +196,13 @@ def user_prompt():
     return int(N), int(T)
 
 def valid_entry(X, lower_range, upper_range):
-    # Validates that X is a whole number integer within [lower_range, upper_range].
-    # Re-prompts until valid. Returns the validated integer.
+    # Validates that X is a whole number within [lower_range, upper_range].
+    # Re-prompts until valid input is given.
+    # Parameters:
+    #   X           - initial input value to validate
+    #   lower_range - minimum acceptable value
+    #   upper_range - maximum acceptable value
+    # Returns: validated number as a float (whole number)
     check = False
     while not check:
         try:
@@ -167,6 +224,12 @@ def valid_entry(X, lower_range, upper_range):
 
 
 def increment_N(start_n, maxt, step):
+    # Runs 10 simulations, incrementing N by step each time while holding MaxT constant.
+    # Parameters:
+    #   start_n - starting grid size
+    #   maxt    - constant MaxT for all simulations
+    #   step    - amount to increment N each simulation
+    # Returns: list of (n, (min, max, avg)) tuples
     results = [] # Data for graphing later
     current_n = start_n
 
@@ -185,6 +248,12 @@ def increment_N(start_n, maxt, step):
 
 
 def increment_maxt(n, start_maxt, step):
+    # Runs 10 simulations, incrementing MaxT by step each time while holding N constant.
+    # Parameters:
+    #   n          - constant grid size for all simulations
+    #   start_maxt - starting MaxT value
+    #   step       - amount to increment MaxT each simulation
+    # Returns: list of (maxt, (min, max, avg)) tuples
     results = [] # Data for graphing later
     current_maxt = start_maxt
 
@@ -203,7 +272,8 @@ def increment_maxt(n, start_maxt, step):
 
 def choose_mode():
     # Prompts the user to choose between holding N or MaxT constant.
-    # Returns 1 (hold MaxT, vary N) or 2 (hold N, vary MaxT).
+    # Parameters: None
+    # Returns: 1 (hold MaxT, vary N) or 2 (hold N, vary MaxT)
     print("\n" + "=" * 65)
     print("MULTI-SIMULATION COMPARISON")
     print("=" * 65)
@@ -220,8 +290,9 @@ def choose_mode():
 
 def get_increment(label):
     # Prompts user for an increment value that must be 1, 10, 100, or 1000.
-    # label: string describing what is being incremented (e.g. 'Nincrement')
-    # Returns the validated increment as an int.
+    # Parameters:
+    #   label - string describing what is being incremented (e.g. 'Nincrement')
+    # Returns: validated increment as an int
     valid = {1, 10, 100, 1000}
     while True:
         raw = input(f"Enter {label} (must be 1, 10, 100, or 1000): ").strip()
@@ -235,9 +306,11 @@ def get_increment(label):
 
 
 def graph_N_results(results, maxt):
-    # Displays a graph of blob distribution vs grid size N.
-    # results: list of (n, (low, high, avg)) tuples from increment_N()
-    # maxt: the constant MaxT value held across all simulations
+    # Displays a line graph of min/max/avg blob counts vs grid size N.
+    # Parameters:
+    #   results - list of (n, (min, max, avg)) tuples from increment_N()
+    #   maxt    - the constant MaxT value used across all simulations
+    # Returns: None
     ns    = [r[0] for r in results]
     lows  = [r[1][0] for r in results]
     highs = [r[1][1] for r in results]
@@ -258,9 +331,11 @@ def graph_N_results(results, maxt):
 
 
 def graph_T_results(results, n):
-    # Displays a graph of blob distribution vs total paint blobs (MaxT).
-    # results: list of (maxt, (low, high, avg)) tuples from increment_maxt()
-    # n: the constant grid size held across all simulations
+    # Displays a line graph of min/max/avg blob counts vs MaxT.
+    # Parameters:
+    #   results - list of (maxt, (min, max, avg)) tuples from increment_maxt()
+    #   n       - the constant grid size used across all simulations
+    # Returns: None
     ts    = [r[0] for r in results]
     lows  = [r[1][0] for r in results]
     highs = [r[1][1] for r in results]
@@ -281,10 +356,12 @@ def graph_T_results(results, n):
 
 
 def run_multi_simulation(prev_n, prev_maxt):
-    # Handles the full Step 4 flow: prompts user for mode, gathers inputs,
-    # runs 10 background simulations, displays a graph, then waits for ENTER.
-    # prev_n:    the N value from the second simulation
-    # prev_maxt: the MaxT value from the second simulation
+    # Runs the multi-simulation comparison: prompts for mode, gathers inputs,
+    # runs 10 simulations, and displays a graph.
+    # Parameters:
+    #   prev_n    - N value from the previous simulation
+    #   prev_maxt - MaxT value from the previous simulation
+    # Returns: None
     mode = choose_mode()
 
     if mode == 1:
@@ -319,6 +396,11 @@ def run_multi_simulation(prev_n, prev_maxt):
 
 
 def main():
+    # Entry point. Runs the intro simulation, a user-configured simulation,
+    # and the multi-simulation comparison.
+    # Uses globals: INTRO_N, INTRO_MAXT
+    # Parameters: None
+    # Returns: None
     displayStartupInfo()
 
     # Initialize 10x10 canvas and set MaxT=300 for the intro simulation
